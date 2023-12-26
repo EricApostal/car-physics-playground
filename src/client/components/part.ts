@@ -3,7 +3,12 @@ import { Controller, OnStart } from "@flamework/core";
 import { AssetService } from "@rbxts/services";
 import { RunService, Players, Workspace, ReplicatedStorage } from "@rbxts/services";
 
-let scalingFactor = 0.038;
+@Component({})
+export class Marker extends BaseComponent implements OnStart {
+    onStart() {
+        print("marker")
+    }
+}
 
 @Component({
     tag: "vehicle_mesh"
@@ -22,13 +27,14 @@ export class Part extends BaseComponent implements OnStart {
         this.vertices = this.mesh.GetVertices() as Array<number>;
 
         for (let i = 0; i < this.vertices.size(); i++) {
-            let pos = this.mesh.GetPosition(this.vertices[i]).mul(scalingFactor);
+            let pos = this.mesh.GetPosition(this.vertices[i]).mul(0.5);
             let marker = new Instance("Part");
+
             marker.Position = (this.instance as BasePart).Position.add(pos);
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
-            marker.Transparency = 0;
-            marker.CanCollide = false;
+            marker.Transparency = 1;
+            marker.CanCollide = true;
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
@@ -39,23 +45,31 @@ export class Part extends BaseComponent implements OnStart {
             weld.Part0 = marker;
             weld.Part1 = this.instance as BasePart;
 
+            let marketIsTouchedMap = new Map<BasePart, boolean>();
             marker.Touched.Connect((part) => {
-                // if (part.Parent === Players.LocalPlayer.Character) {
-                if (part.Name === "baseplate") {
+                if (marketIsTouchedMap.get(part) === undefined) {
+                    // print("new map entry")
+                    marketIsTouchedMap.set(part, false);
+                }
+
+                if (part.Name === "baseplate" || (marketIsTouchedMap.get(part))) {
                     return;
                 }
+
+                marketIsTouchedMap.set(part, true);
+                // print("colliding")
 
                 let curr = this.verticesMap.get(marker)!;
                 let currPos = this.mesh!.GetPosition(curr)!;
 
-                let force = ((part.GetVelocityAtPosition(currPos).Magnitude * part.GetMass()) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude * ((this.instance as BasePart).GetMass())) / 200000
-                // print(force)
+                let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude * part.GetMass()) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude * ((this.instance as BasePart).GetMass())) / 200000, 0.1);
                 let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
                 this.mesh!.SetPosition(curr, newPos);
 
-                let markerPos = this.mesh!.GetPosition(this.vertices[i]).mul(scalingFactor);
+                let markerPos = this.mesh!.GetPosition(this.vertices[i]).mul(0.5);
                 marker.Position = markerPos.add((this.instance as BasePart).Position);
-                // }
+                // wait(5);
+                marketIsTouchedMap.set(part, false);
             });
 
             // silly, but allows for O(1) lookup
@@ -64,5 +78,4 @@ export class Part extends BaseComponent implements OnStart {
         }
         print("finished vertices")
     }
-
 }
