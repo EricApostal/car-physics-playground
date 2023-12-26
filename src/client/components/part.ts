@@ -3,6 +3,8 @@ import { Controller, OnStart } from "@flamework/core";
 import { AssetService } from "@rbxts/services";
 import { RunService, Players, Workspace, ReplicatedStorage } from "@rbxts/services";
 
+let scalingFactor = 0.038;
+
 @Component({
     tag: "vehicle_mesh"
 })
@@ -20,7 +22,7 @@ export class Part extends BaseComponent implements OnStart {
         this.vertices = this.mesh.GetVertices() as Array<number>;
 
         for (let i = 0; i < this.vertices.size(); i++) {
-            let pos = this.mesh.GetPosition(this.vertices[i]).mul(0.5);
+            let pos = this.mesh.GetPosition(this.vertices[i]).mul(scalingFactor);
             let marker = new Instance("Part");
             marker.Position = (this.instance as BasePart).Position.add(pos);
             marker.Size = new Vector3(0.1, 0.1, 0.1);
@@ -51,7 +53,7 @@ export class Part extends BaseComponent implements OnStart {
                 let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
                 this.mesh!.SetPosition(curr, newPos);
 
-                let markerPos = this.mesh!.GetPosition(this.vertices[i]).mul(0.5);
+                let markerPos = this.mesh!.GetPosition(this.vertices[i]).mul(scalingFactor);
                 marker.Position = markerPos.add((this.instance as BasePart).Position);
                 // }
             });
