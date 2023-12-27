@@ -62,7 +62,7 @@ export class Part extends BaseComponent implements OnStart {
                 let curr = this.verticesMap.get(marker)!;
                 let currPos = this.mesh!.GetPosition(curr)!;
 
-                let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude * part.GetMass()) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude * ((this.instance as BasePart).GetMass())) / 200000, 0.1);
+                let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude * part.GetMass()) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude * ((this.instance as BasePart).GetMass())) / 300000, 0.05);
                 let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
                 this.mesh!.SetPosition(curr, newPos);
 
