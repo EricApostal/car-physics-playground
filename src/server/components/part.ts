@@ -10,7 +10,7 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
     onStart() {
         let wheels = this.instance.WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("motors")!.GetChildren();
         for (let wheel of wheels) {
-            (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 10;
+            (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 0;
         }
         // (this.instance as BasePart).SetNetworkOwner(Players.WaitForChild("SirTZNLive") as Player);
         this.enterPrompt.Parent = this.instance.FindFirstChild("MeshPart")! as BasePart;

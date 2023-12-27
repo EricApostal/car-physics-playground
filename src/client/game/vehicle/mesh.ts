@@ -3,37 +3,38 @@ import { Controller, OnStart } from "@flamework/core";
 import { AssetService } from "@rbxts/services";
 import { RunService, Players, Workspace, ReplicatedStorage } from "@rbxts/services";
 
-@Component({})
-export class Marker extends BaseComponent implements OnStart {
-    onStart() {
-        print("marker")
+export class VehicleMesh extends BaseComponent implements OnStart {
+    public vertices: Array<number> = [];
+    public markerMap = new Map<number, BasePart>();
+    public verticesMap = new Map<BasePart, number>();
+    public mesh?: EditableMesh;
+    public scaling: number = 0.5;
+    public damageResistance: number = 1000;
+
+    constructor(scaling: number, damageResistance: number) {
+        /*
+        TODO:
+        - Add arguments to constructor for settings; scaling, damage resistance, etc.
+        */
+        super();
+        this.scaling = scaling;
+        this.damageResistance = damageResistance;
     }
-}
-
-@Component({
-    tag: "vehicle_mesh"
-})
-export class Part extends BaseComponent implements OnStart {
-    private vertices: Array<number> = [];
-    private markerMap = new Map<number, BasePart>();
-    private verticesMap = new Map<BasePart, number>();
-    private mesh?: EditableMesh;
 
     onStart() {
-        print("called onstart")
-        print(this.instance)
+        (this.instance as BasePart).Anchored = true;
         this.mesh = AssetService.CreateEditableMeshFromPartAsync(this.instance as MeshPart);
         this.mesh.Parent = this.instance;
         this.vertices = this.mesh.GetVertices() as Array<number>;
 
         for (let i = 0; i < this.vertices.size(); i++) {
-            let pos = this.mesh.GetPosition(this.vertices[i]).mul(0.5);
+            let pos = this.mesh.GetPosition(this.vertices[i]).mul(this.scaling);
             let marker = new Instance("Part");
 
             marker.Position = (this.instance as BasePart).Position.add(pos);
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
-            marker.Transparency = 1;
+            marker.Transparency = 0;
             marker.CanCollide = true;
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
@@ -58,12 +59,12 @@ export class Part extends BaseComponent implements OnStart {
                     let curr = this.verticesMap.get(marker)!;
                     let currPos = this.mesh!.GetPosition(curr)!;
 
-                    let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude) / 1000, 0.5);
+                    let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude) / this.damageResistance, 0.5);
                     // print(force)
                     let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
                     this.mesh!.SetPosition(curr, newPos);
 
-                    let markerPos = (this.mesh!.GetPosition(this.vertices[i]).mul(0.5)).add((this.instance as BasePart).Position);
+                    let markerPos = (this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)).add((this.instance as BasePart).Position);
                     marker.Position = markerPos
                     task.wait(2);
                     marker.SetAttribute("isTouched", false);
@@ -74,6 +75,7 @@ export class Part extends BaseComponent implements OnStart {
             this.markerMap.set(this.vertices[i], marker);
             this.verticesMap.set(marker, this.vertices[i]);
         }
-        print("finished vertices")
+        print("Generated verticies.");
+        (this.instance as BasePart).Anchored = false;
     }
 }
