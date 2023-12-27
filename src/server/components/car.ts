@@ -44,7 +44,5 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
         // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
         // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).LowerAngle = 0;
         // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
-
-
     }
 }
