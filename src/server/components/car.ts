@@ -2,6 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart, OnTick } from "@flamework/core";
 import { Players, Workspace, ReplicatedStorage } from "@rbxts/services";
 import { Functions } from "server/network";
+import { SessionManager } from "server/services/session";
 
 @Component({ tag: "vision_car" })
 export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
@@ -22,15 +23,21 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
         this.enterPrompt.HoldDuration = 0.25;
 
         this.enterPrompt.Triggered.Connect((plr) => {
+            if (SessionManager.getSession(plr)!.getInVehicle()) return;
+
             let mesh = this.instance.FindFirstChild("MeshPart")! as BasePart;
 
             mesh.SetNetworkOwner(plr);
-            Functions.enterVehicle.invoke(plr, this.instance as Model);
+            SessionManager.getSession(plr)!.enterVehicle(this.instance as Model);
 
             // hide character from workspace
             plr.Character!.Parent = ReplicatedStorage;
             this.enterPrompt.Enabled = false;
 
+            SessionManager.getSession(plr)!.onVehicleExit.Connect(() => {
+                mesh.SetNetworkOwner(undefined);
+                this.enterPrompt.Enabled = true;
+            });
         });
     }
 

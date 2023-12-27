@@ -9,6 +9,7 @@ interface ClientToServerFunctions {
 }
 
 interface ServerToClientFunctions {
+    exitVehicle(): void;
     enterVehicle(model: Model): void;
 }
 
