@@ -22,7 +22,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     }
 
     onStart() {
-        (this.instance as BasePart).Anchored = true;
+        // (this.instance as BasePart).Anchored = true;
         this.mesh = AssetService.CreateEditableMeshFromPartAsync(this.instance as MeshPart);
         this.mesh.Parent = this.instance;
         this.vertices = this.mesh.GetVertices() as Array<number>;
@@ -76,6 +76,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             this.verticesMap.set(marker, this.vertices[i]);
         }
         print("Generated verticies.");
-        (this.instance as BasePart).Anchored = false;
+        // (this.instance as BasePart).Anchored = false;
     }
 }

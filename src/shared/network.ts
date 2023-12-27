@@ -4,7 +4,9 @@ interface ClientToServerEvents { }
 
 interface ServerToClientEvents { }
 
-interface ClientToServerFunctions { }
+interface ClientToServerFunctions {
+    requestExitVehicle(): void;
+}
 
 interface ServerToClientFunctions {
     enterVehicle(model: Model): void;

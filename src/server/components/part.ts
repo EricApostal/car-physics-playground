@@ -6,9 +6,12 @@ import { Functions } from "server/network";
 @Component({ tag: "vision_car" })
 export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
     private enterPrompt: ProximityPrompt = new Instance("ProximityPrompt");
+    private steering?: BasePart;
 
     onStart() {
         let wheels = this.instance.WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("motors")!.GetChildren();
+        this.steering = (this.instance as BasePart).WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("steering")! as BasePart;
+
         for (let wheel of wheels) {
             (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 0;
         }
@@ -20,11 +23,28 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
 
         this.enterPrompt.Triggered.Connect((plr) => {
             let mesh = this.instance.FindFirstChild("MeshPart")! as BasePart;
+
             mesh.SetNetworkOwner(plr);
-            Functions.enterVehicle.invoke(plr, this.instance as Model)
+            Functions.enterVehicle.invoke(plr, this.instance as Model);
+
+            // hide character from workspace
+            plr.Character!.Parent = ReplicatedStorage;
+            this.enterPrompt.Enabled = false;
+
         });
     }
 
     onTick() {
+        // let FR = this.steering!.FindFirstChild("FR")!;
+        // let FL = this.steering!.FindFirstChild("FL")!;
+        // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).TargetAngle = 0;
+        // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).TargetAngle = 0;
+
+        // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).LowerAngle = 0;
+        // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
+        // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).LowerAngle = 0;
+        // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
+
+
     }
 }
