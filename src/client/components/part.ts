@@ -45,31 +45,29 @@ export class Part extends BaseComponent implements OnStart {
             weld.Part0 = marker;
             weld.Part1 = this.instance as BasePart;
 
-            let marketIsTouchedMap = new Map<BasePart, boolean>();
             marker.Touched.Connect((part) => {
-                if (marketIsTouchedMap.get(part) === undefined) {
-                    // print("new map entry")
-                    marketIsTouchedMap.set(part, false);
+                task.wait();
+
+
+                if (((marker.GetAttribute("isTouched") === false) || (marker.GetAttribute("isTouched") === undefined))) {
+
+                    // print(part.Name)
+
+                    marker.SetAttribute("isTouched", true);
+
+                    let curr = this.verticesMap.get(marker)!;
+                    let currPos = this.mesh!.GetPosition(curr)!;
+
+                    let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude) / 1000, 0.5);
+                    // print(force)
+                    let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
+                    this.mesh!.SetPosition(curr, newPos);
+
+                    let markerPos = (this.mesh!.GetPosition(this.vertices[i]).mul(0.5)).add((this.instance as BasePart).Position);
+                    marker.Position = markerPos
+                    task.wait(2);
+                    marker.SetAttribute("isTouched", false);
                 }
-
-                if (part.Name === "baseplate" || (marketIsTouchedMap.get(part))) {
-                    return;
-                }
-
-                marketIsTouchedMap.set(part, true);
-                // print("colliding")
-
-                let curr = this.verticesMap.get(marker)!;
-                let currPos = this.mesh!.GetPosition(curr)!;
-
-                let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude * part.GetMass()) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude * ((this.instance as BasePart).GetMass())) / 300000, 0.05);
-                let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
-                this.mesh!.SetPosition(curr, newPos);
-
-                let markerPos = this.mesh!.GetPosition(this.vertices[i]).mul(0.5);
-                marker.Position = markerPos.add((this.instance as BasePart).Position);
-                // wait(5);
-                marketIsTouchedMap.set(part, false);
             });
 
             // silly, but allows for O(1) lookup
