@@ -35,10 +35,11 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
             marker.Transparency = 0;
-            marker.CanCollide = true;
+            marker.CanCollide = false;
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
+            marker.Massless = true;
             marker.AddTag("marker")
 
             let weld = new Instance("WeldConstraint");

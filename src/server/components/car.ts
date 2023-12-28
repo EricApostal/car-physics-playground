@@ -7,15 +7,15 @@ import { SessionManager } from "server/services/session";
 @Component({ tag: "vision_car" })
 export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
     private enterPrompt: ProximityPrompt = new Instance("ProximityPrompt");
-    private steering?: BasePart;
+    private steering?: Folder;
 
     onStart() {
-        let wheels = this.instance.WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("motors")!.GetChildren();
-        this.steering = (this.instance as BasePart).WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("steering")! as BasePart;
+        // let wheels = this.instance.WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("motors")!.GetChildren();
+        this.steering = (this.instance as BasePart).WaitForChild("MeshPart").FindFirstChild("constraints")!.FindFirstChild("steering")! as Folder;
 
-        for (let wheel of wheels) {
-            (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 0;
-        }
+        // for (let wheel of wheels) {
+        //     (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 0;
+        // }
         // (this.instance as BasePart).SetNetworkOwner(Players.WaitForChild("SirTZNLive") as Player);
         this.enterPrompt.Parent = this.instance.FindFirstChild("MeshPart")! as BasePart;
         this.enterPrompt.ActionText = "Drive";
@@ -42,14 +42,10 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
     }
 
     onTick() {
-        // let FR = this.steering!.FindFirstChild("FR")!;
-        // let FL = this.steering!.FindFirstChild("FL")!;
+        let FR = this.steering!.FindFirstChild("FR")!;
+        let FL = this.steering!.FindFirstChild("FL")!;
         // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).TargetAngle = 0;
         // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).TargetAngle = 0;
 
-        // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).LowerAngle = 0;
-        // (FR.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
-        // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).LowerAngle = 0;
-        // (FL.FindFirstChild("HingeConstraint")! as HingeConstraint).UpperAngle = 0;
     }
 }

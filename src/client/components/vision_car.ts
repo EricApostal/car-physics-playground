@@ -13,10 +13,10 @@ export class HyundaiVision extends BaseComponent implements OnStart {
     }
 
     onStart() {
-        let wheels = this.instance.WaitForChild("MeshPart").FindFirstChild("wheels")!.FindFirstChild("motors")!.GetChildren();
-        for (let wheel of wheels) {
-            let mod = this.motorModMap.get(wheel.Name)!;
-            (wheel.FindFirstChild("HingeConstraint") as HingeConstraint).AngularVelocity = 1 * mod;
+        let hinges = this.instance.WaitForChild("MeshPart").WaitForChild("constraints").WaitForChild("motors")!.GetChildren();
+        for (let hinge of hinges) {
+            let mod = this.motorModMap.get(hinge.Name)!;
+            (hinge as HingeConstraint).AngularVelocity = 1 * mod;
         }
     }
 }
