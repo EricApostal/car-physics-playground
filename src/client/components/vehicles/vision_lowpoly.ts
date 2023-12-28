@@ -8,7 +8,7 @@ import { VehicleMesh } from "client/game/vehicle/mesh";
 export class HyundaiVision extends VehicleMesh implements OnStart {
 
     constructor() {
-        super(0.37, 300);
+        super(0.37, 10);
     }
 
     onStart() {

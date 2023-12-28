@@ -30,12 +30,14 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         for (let i = 0; i < this.vertices.size(); i++) {
             let pos = this.mesh.GetPosition(this.vertices[i]).mul(this.scaling);
             let marker = new Instance("Part");
+            let relativeCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(pos));
 
-            marker.Position = (this.instance as BasePart).Position.add(pos);
+            marker.Position = relativeCFrame.Position;
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
             marker.Transparency = 0;
-            marker.CanCollide = false;
+            marker.CanCollide = true
+            marker.CollisionGroup = "car";
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
@@ -52,21 +54,19 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
 
                 if (((marker.GetAttribute("isTouched") === false) || (marker.GetAttribute("isTouched") === undefined))) {
-
-                    // print(part.Name)
-
                     marker.SetAttribute("isTouched", true);
 
                     let curr = this.verticesMap.get(marker)!;
                     let currPos = this.mesh!.GetPosition(curr)!;
 
                     let force = math.min(((part.GetVelocityAtPosition(currPos).Magnitude) + (this.instance as BasePart).GetVelocityAtPosition(currPos).Magnitude) / this.damageResistance, 0.5);
-                    // print(force)
+                    print(force)
                     let newPos = currPos.sub((part.Position.sub(marker.Position)).mul(force));
                     this.mesh!.SetPosition(curr, newPos);
 
-                    let markerPos = (this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)).add((this.instance as BasePart).Position);
-                    marker.Position = markerPos
+                    let markerCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)));
+                    marker.Position = markerCFrame.Position;
+
                     task.wait(2);
                     marker.SetAttribute("isTouched", false);
                 }
