@@ -40,83 +40,64 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
             marker.Transparency = 0;
-            marker.CanCollide = false
+            marker.CanCollide = true
             marker.CollisionGroup = "car";
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
             marker.Massless = false;
+            marker.CustomPhysicalProperties = new PhysicalProperties(10, 0.3, 0.5);
             marker.Color = Color3.fromRGB(0, 255, 133);
 
             marker.AddTag("marker")
 
-            let weld = new Instance("WeldConstraint");
-            weld.Parent = marker;
-            weld.Part0 = marker;
-            weld.Part1 = this.instance as BasePart;
+            let prism = new Instance("PrismaticConstraint");
+            // let spring = new Instance("SpringConstraint");
+            prism.Parent = marker;
+            let prismaticMarkerAttachment = new Instance("Attachment");
+            prismaticMarkerAttachment.Parent = marker;
+            let partAttachment = new Instance("Attachment");
+            partAttachment.Parent = this.instance as BasePart;
+            prism.Attachment0 = prismaticMarkerAttachment;
+            prism.Attachment1 = partAttachment;
 
+            // spring.Attachment0 = prismaticMarkerAttachment;
+            // spring.Attachment1 = partAttachment;
 
-            marker.Touched.Connect((part) => {
-                if ((part.Parent as BasePart).Name === "wheels") return;
-                if ((part as BasePart).Name === "baseplate") return;
-                // task.wait();
+            // prism.Length = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
 
-                if (((marker.GetAttribute("isTouched") === false) || (marker.GetAttribute("isTouched") === undefined))) {
-                    marker.SetAttribute("isTouched", true);
-
-                    let curr = this.verticesMap.get(marker)!;
-                    let currPos = this.mesh!.GetPosition(curr)!;
-
-                    let localImpactDirection = part.Position.sub(marker.Position).Unit;
-                    let globalImpactDirection = (this.instance as BasePart).CFrame.VectorToWorldSpace(localImpactDirection);
-
-                    let relativeVelocity = (this.instance as BasePart).AssemblyLinearVelocity;
-                    let impactSpeed = relativeVelocity.Magnitude;
-                    let forceMagnitude = math.min((impactSpeed) / this.damageResistance, 100000);
-
-                    let damageIntensity = math.min((forceMagnitude * 2) * part.GetMass() / 75, 8); // Increase intensity based on speed
-
-                    let newPos = currPos.add(globalImpactDirection.mul(-damageIntensity));
-                    let adjacents = this.mesh!.GetAdjacentVertices(curr) as Array<number>;
-
-                    for (let vert of adjacents) {
-                        let vertPos = this.mesh!.GetPosition(vert);
-                        // let newVertPos = vertPos.add(globalImpactDirection.mul(-damageIntensity / 2));
-                        // this.mesh!.SetPosition(vert, newVertPos);
-                        if (vertPos.sub(currPos).Magnitude > 10) {
-                            // remove current vertex
-                            // print("too big!")
-                            // this.mesh!.SetPosition(curr, new Vector3(0, 10000, 0));
-                        }
-                    }
-
-
-                    if ((new Vector3(0, 0, 0)).sub(currPos).Magnitude > 10) {
-                        // remove current vertex
-                        // print("too big!")
-                        // print(currPos)
-                        this.mesh!.SetPosition(curr, (this.instance as BasePart).Position);
-                        this.mesh!.GetPosition(curr);
-                        let markerCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)));
-                        marker.Position = markerCFrame.Position;
-                    }
-                    this.mesh!.SetPosition(curr, newPos);
-
-                    let markerCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)));
-                    marker.Position = markerCFrame.Position;
-
-                    marker.SetAttribute("isTouched", false);
-                    marker.Color = Color3.fromRGB(250, 46, 46);
-                    task.wait(3);
-                    marker.Color = Color3.fromRGB(0, 255, 133);
-                }
-            });
+            // print(prism.Length)
 
             // silly, but allows for O(1) lookup
             this.markerMap.set(this.vertices[i], marker);
             this.verticesMap.set(marker, this.vertices[i]);
         }
-        print("Generated verticies.");
+        print("Generated verticies, generating constraints...");
         // (this.instance as BasePart).Anchored = false;
+
+        for (let currentVertex of this.mesh!.GetVertices() as Array<number>) {
+            let marker = this.markerMap.get(currentVertex)!;
+            let springMarkerAttachment = new Instance("Attachment");
+            springMarkerAttachment.Parent = marker;
+
+            for (let vertex of this.mesh!.GetAdjacentVertices(currentVertex) as Array<number>) {
+                let otherMarker = this.markerMap.get(vertex)!;
+
+                let weld = new Instance("RodConstraint");
+                weld.Length = weld.CurrentDistance;
+                // calculate the current weld angle
+                print(otherMarker.Position.Angle(marker.Position))
+
+                let otherMarkerAttachment = new Instance("Attachment");
+                otherMarkerAttachment.Parent = otherMarker;
+
+
+                weld.Parent = game.Workspace.WaitForChild("constraints");
+                weld.Attachment0 = otherMarkerAttachment;
+                weld.Attachment1 = springMarkerAttachment;
+                // weld.Name = "rod";
+            }
+        }
+        print("Done!");
     }
 }
