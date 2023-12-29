@@ -13,10 +13,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     public damageResistance: number = 1000;
 
     constructor(scaling: number, damageResistance: number) {
-        /*
-        TODO:
-        - Add arguments to constructor for settings; scaling, damage resistance, etc.
-        */
         super();
         this.scaling = scaling;
         this.damageResistance = damageResistance;
@@ -31,9 +27,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         let id1 = attachment1.GetAttribute("id") as string;
         let id2 = attachment2.GetAttribute("id") as string;
 
-        let check1 = this.constraintMap.get(id1 + id2);
-        let check2 = this.constraintMap.get(id2 + id1);
-
+        let check1 = this.constraintMap.get(id1 + id2) !== undefined;
+        let check2 = this.constraintMap.get(id2 + id1) !== undefined;
         return check1 || check2;
     }
 
@@ -56,21 +51,26 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
     // Recursively constraint all vertecies to their adjacent vertecies
     private constrainVerticies(vertexIndex: number) {
+        print("Constraining vertex " + vertexIndex)
         let currentMarker = this.markerMap.get(vertexIndex)!;
         let currentMarkerAttachment = currentMarker.WaitForChild("Attachment")! as Attachment;
 
         let adjacentVertecies = this.mesh!.GetAdjacentVertices(vertexIndex) as Array<number>;
+        print("Adjacent vertecies: " + adjacentVertecies.size())
         for (let vert of adjacentVertecies) {
-            if (this.constraintExists(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment)) {
-                print("found")
-                continue;
+            print("Constraining vertex " + vertexIndex + " to " + vert)
+
+            if (!this.constraintExists(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment)) {
+                this.makeConstraint(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment);
+                this.constrainVerticies(vert);
+            } else {
+                print("Constraint already exists between " + vertexIndex + " and " + vert);
             }
-            this.makeConstraint(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment);
-            this.constrainVerticies(vert);
         }
 
     }
 
+    // Bind node to vertex by ID
     private makeNode(vertId: number) {
 
         // Calculate Position
