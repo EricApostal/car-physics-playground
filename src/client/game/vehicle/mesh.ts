@@ -40,7 +40,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
             marker.Transparency = 0;
-            marker.CanCollide = true
+            marker.CanCollide = false
             marker.CollisionGroup = "car";
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
@@ -58,8 +58,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
             marker.Touched.Connect((part) => {
                 if ((part.Parent as BasePart).Name === "wheels") return;
-                // if (((part.Parent as BasePart) as BasePart).Name === "baseplate") return;
-                task.wait();
+                if ((part as BasePart).Name === "baseplate") return;
+                // task.wait();
 
                 if (((marker.GetAttribute("isTouched") === false) || (marker.GetAttribute("isTouched") === undefined))) {
                     marker.SetAttribute("isTouched", true);
@@ -79,23 +79,17 @@ export class VehicleMesh extends BaseComponent implements OnStart {
                     let newPos = currPos.add(globalImpactDirection.mul(-damageIntensity));
                     let adjacents = this.mesh!.GetAdjacentVertices(curr) as Array<number>;
 
-                    // warning: This is dangerous! 
-                    if (newPos.sub(currPos).Magnitude > 4) {
-                        marker.SetAttribute("isTouched", false);
-                        return;
-                    }
-
-
                     for (let vert of adjacents) {
                         let vertPos = this.mesh!.GetPosition(vert);
                         // let newVertPos = vertPos.add(globalImpactDirection.mul(-damageIntensity / 2));
                         // this.mesh!.SetPosition(vert, newVertPos);
                         if (vertPos.sub(currPos).Magnitude > 10) {
                             // remove current vertex
-                            print("too big!")
-                            this.mesh!.SetPosition(curr, new Vector3(0, 10000, 0));
+                            // print("too big!")
+                            // this.mesh!.SetPosition(curr, new Vector3(0, 10000, 0));
                         }
                     }
+
 
                     if ((new Vector3(0, 0, 0)).sub(currPos).Magnitude > 10) {
                         // remove current vertex
