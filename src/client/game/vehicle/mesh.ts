@@ -45,38 +45,27 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
-            marker.Massless = false;
-            marker.CustomPhysicalProperties = new PhysicalProperties(10, 0.3, 0.5);
+            // marker.Massless = true;
+            marker.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
             marker.Color = Color3.fromRGB(0, 255, 133);
 
             marker.AddTag("marker")
+            // let spring = new Instance("RodConstraint");
 
-            let prism = new Instance("PrismaticConstraint");
-
-            prism.Parent = marker;
+            // spring.Parent = marker;
             let prismaticMarkerAttachment = new Instance("Attachment");
             prismaticMarkerAttachment.Parent = marker;
 
             let partAttachment = new Instance("Attachment");
             partAttachment.Parent = this.instance as BasePart;
-            prism.Attachment0 = prismaticMarkerAttachment;
-            prism.Attachment1 = partAttachment;
-
-            let weldAngle = CFrame.lookAt(marker.Position, (this.instance as BasePart).Position);
-            prismaticMarkerAttachment.CFrame = weldAngle; // Apply the calculated CFrame to the attachment
-
-            prism.LimitsEnabled = true;
-            prism.LowerLimit = -2;
-            prism.UpperLimit = 2;
-            prism.Restitution = 1;
-            prism.Size = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
-
-            // prism.Size = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
+            // spring.Attachment0 = partAttachment;
+            // spring.Attachment1 = prismaticMarkerAttachment;
+            // spring.Length = spring.CurrentDistance;
+            // spring.LimitsEnabled = true;
+            // spring.Length = spring.CurrentDistance;
 
             // spring.Attachment0 = partAttachment;
             // spring.Attachment1 = prismaticMarkerAttachment;
-
-            // prism.Length = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
 
             // print(prism.Length)
 
@@ -89,18 +78,21 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         for (let currentVertex of this.mesh!.GetVertices() as Array<number>) {
             let marker = this.markerMap.get(currentVertex)!;
-            let springMarkerAttachment = new Instance("Attachment");
-            springMarkerAttachment.Parent = marker;
+            let springMarkerAttachment = marker.FindFirstChild("Attachment")! as Attachment;
 
             for (let vertex of this.mesh!.GetAdjacentVertices(currentVertex) as Array<number>) {
                 let otherMarker = this.markerMap.get(vertex)!;
 
                 let weld = new Instance("RodConstraint");
+                //weld.Length = weld.CurrentDistance;
+                weld.LimitsEnabled = true;
                 weld.Length = weld.CurrentDistance;
+                // weld.MinLength = weld.CurrentLength - 10;
+                // weld.MaxLength = weld.CurrentLength + 10;
+                // weld.FreeLength = weld.CurrentLength;
+                // weld.Damping = 0.5;
 
-                let otherMarkerAttachment = new Instance("Attachment");
-                otherMarkerAttachment.Parent = otherMarker;
-
+                let otherMarkerAttachment = otherMarker.FindFirstChild("Attachment")! as Attachment;
 
                 weld.Parent = game.Workspace.WaitForChild("constraints");
                 weld.Attachment0 = otherMarkerAttachment;
