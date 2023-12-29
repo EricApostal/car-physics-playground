@@ -52,17 +52,29 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.AddTag("marker")
 
             let prism = new Instance("PrismaticConstraint");
-            // let spring = new Instance("SpringConstraint");
+
             prism.Parent = marker;
             let prismaticMarkerAttachment = new Instance("Attachment");
             prismaticMarkerAttachment.Parent = marker;
+
             let partAttachment = new Instance("Attachment");
             partAttachment.Parent = this.instance as BasePart;
             prism.Attachment0 = prismaticMarkerAttachment;
             prism.Attachment1 = partAttachment;
 
-            // spring.Attachment0 = prismaticMarkerAttachment;
-            // spring.Attachment1 = partAttachment;
+            let weldAngle = CFrame.lookAt(marker.Position, (this.instance as BasePart).Position);
+            prismaticMarkerAttachment.CFrame = weldAngle; // Apply the calculated CFrame to the attachment
+
+            prism.LimitsEnabled = true;
+            prism.LowerLimit = -2;
+            prism.UpperLimit = 2;
+            prism.Restitution = 1;
+            prism.Size = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
+
+            // prism.Size = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
+
+            // spring.Attachment0 = partAttachment;
+            // spring.Attachment1 = prismaticMarkerAttachment;
 
             // prism.Length = prism.Attachment0.WorldPosition.sub(prism.Attachment1.WorldPosition).Magnitude;
 
@@ -85,8 +97,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
                 let weld = new Instance("RodConstraint");
                 weld.Length = weld.CurrentDistance;
-                // calculate the current weld angle
-                print(otherMarker.Position.Angle(marker.Position))
 
                 let otherMarkerAttachment = new Instance("Attachment");
                 otherMarkerAttachment.Parent = otherMarker;
