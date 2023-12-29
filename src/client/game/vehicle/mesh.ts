@@ -62,6 +62,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         let adjacentVertecies = this.mesh!.GetAdjacentVertices(vertexIndex) as Array<number>;
         for (let vert of adjacentVertecies) {
             if (this.constraintExists(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment)) {
+                print("found")
                 continue;
             }
             this.makeConstraint(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment);
@@ -74,30 +75,30 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         // Calculate Position
         let pos = this.mesh!.GetPosition(vertId).mul(this.scaling);
-        let marker = new Instance("Part");
+        let node = new Instance("Part");
         let relativeCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(pos));
 
         // Properties
-        marker.Position = relativeCFrame.Position;
-        marker.Size = new Vector3(0.1, 0.1, 0.1);
-        marker.Anchored = false;
-        marker.Transparency = 0;
-        marker.CanCollide = true
-        marker.CollisionGroup = "car";
-        marker.CanTouch = true;
-        marker.Parent = game.Workspace;
-        marker.Name = "marker";
-        marker.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
-        marker.Color = Color3.fromRGB(0, 255, 133);
+        node.Position = relativeCFrame.Position;
+        node.Size = new Vector3(0.1, 0.1, 0.1);
+        node.Anchored = false;
+        node.Transparency = 0;
+        node.CanCollide = true
+        node.CollisionGroup = "car";
+        node.CanTouch = true;
+        node.Parent = game.Workspace;
+        node.Name = "node";
+        node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
+        node.Color = Color3.fromRGB(0, 255, 133);
 
         // Make attachment with unique ID
         let attachment = new Instance("Attachment");
-        attachment.Parent = marker;
+        attachment.Parent = node;
         attachment.SetAttribute("id", HttpService.GenerateGUID(false));
 
         // For O(1) lookup
-        this.markerMap.set(vertId, marker);
-        this.verticesMap.set(marker, vertId);
+        this.markerMap.set(vertId, node);
+        this.verticesMap.set(node, vertId);
     }
 
     onStart() {
