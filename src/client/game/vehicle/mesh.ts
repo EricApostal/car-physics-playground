@@ -22,7 +22,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     }
 
     private localToGlobalVert(vert: number) {
-        return this.mesh!.GetPosition(vert).mul(this.scaling).add((this.instance as BasePart).Position);
+        return (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(vert).mul(this.scaling))).Position;
     }
 
     onStart() {
@@ -39,13 +39,13 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             marker.Position = relativeCFrame.Position;
             marker.Size = new Vector3(0.1, 0.1, 0.1);
             marker.Anchored = false;
-            marker.Transparency = 1;
+            marker.Transparency = 0;
             marker.CanCollide = true
             marker.CollisionGroup = "car";
             marker.CanTouch = true;
             marker.Parent = game.Workspace;
             marker.Name = "marker";
-            marker.Massless = true;
+            marker.Massless = false;
             marker.Color = Color3.fromRGB(0, 255, 133);
 
             marker.AddTag("marker")
@@ -77,35 +77,35 @@ export class VehicleMesh extends BaseComponent implements OnStart {
                     let damageIntensity = math.min((forceMagnitude * 2) * part.GetMass() / 75, 8); // Increase intensity based on speed
 
                     let newPos = currPos.add(globalImpactDirection.mul(-damageIntensity));
+                    let adjacents = this.mesh!.GetAdjacentVertices(curr) as Array<number>;
 
-                    if (currPos.sub(newPos).Magnitude >= 5) {
+                    // warning: This is dangerous! 
+                    if (newPos.sub(currPos).Magnitude > 4) {
                         marker.SetAttribute("isTouched", false);
                         return;
                     }
-                    let adjacents = this.mesh!.GetAdjacentVertices(curr) as Array<number>;
-                    let closestVert = undefined;
-                    for (let vert of adjacents) {
-                        let vertPos = this.mesh!.GetPosition(vert);
-                        if (closestVert === undefined) {
-                            closestVert = vert;
-                            continue;
-                        }
-                        if (vertPos.sub((this.instance as BasePart).Position).Magnitude < this.mesh!.GetPosition(closestVert).sub((this.instance as BasePart).Position).Magnitude) {
-                            closestVert = vert;
-                        }
-                    }
+
 
                     for (let vert of adjacents) {
                         let vertPos = this.mesh!.GetPosition(vert);
                         // let newVertPos = vertPos.add(globalImpactDirection.mul(-damageIntensity / 2));
                         // this.mesh!.SetPosition(vert, newVertPos);
-                        if (vertPos.sub(currPos).Magnitude > 20) {
+                        if (vertPos.sub(currPos).Magnitude > 10) {
                             // remove current vertex
                             print("too big!")
-                            this.mesh!.SetPosition(curr, this.mesh!.GetPosition(closestVert!));
+                            this.mesh!.SetPosition(curr, new Vector3(0, 10000, 0));
                         }
                     }
 
+                    if ((new Vector3(0, 0, 0)).sub(currPos).Magnitude > 10) {
+                        // remove current vertex
+                        // print("too big!")
+                        // print(currPos)
+                        this.mesh!.SetPosition(curr, (this.instance as BasePart).Position);
+                        this.mesh!.GetPosition(curr);
+                        let markerCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)));
+                        marker.Position = markerCFrame.Position;
+                    }
                     this.mesh!.SetPosition(curr, newPos);
 
                     let markerCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(this.vertices[i]).mul(this.scaling)));
@@ -117,9 +117,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
                     marker.Color = Color3.fromRGB(0, 255, 133);
                 }
             });
-
-
-
 
             // silly, but allows for O(1) lookup
             this.markerMap.set(this.vertices[i], marker);
