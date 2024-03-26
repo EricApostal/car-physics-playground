@@ -5,7 +5,7 @@ import { HttpService } from "@rbxts/services";
 
 export class VehicleMesh extends BaseComponent implements OnStart {
     public vertices: Array<number> = [];
-    public markerMap = new Map<number, BasePart>();
+    public nodeMap = new Map<number, BasePart>();
     public verticesMap = new Map<BasePart, number>();
     public constraintMap = new Map<string, boolean>();
     public mesh?: EditableMesh;
@@ -35,13 +35,21 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     // Make constraint between two vertecies
     private makeConstraint(attachment1: Attachment, attachment2: Attachment) {
         // Create a new constraint
-        let weld = new Instance("RodConstraint");
-        weld.LimitsEnabled = true;
-        weld.Length = weld.CurrentDistance;
+        let spring = new Instance("SpringConstraint");
+        spring.LimitsEnabled = true;
 
-        weld.Parent = game.Workspace.WaitForChild("constraints");
-        weld.Attachment0 = attachment1;
-        weld.Attachment1 = attachment2;
+        let a1pos = (attachment1.Parent! as BasePart).Position;
+        let a2pos = (attachment2.Parent! as BasePart).Position;
+
+        spring.MinLength = a1pos.sub(a2pos).Magnitude - 0.2;
+        spring.MaxLength = a1pos.sub(a2pos).Magnitude + 0.2;
+        spring.FreeLength = a1pos.sub(a2pos).Magnitude;
+        spring.Stiffness = 500;
+        spring.Damping = 0.5;
+
+        spring.Parent = game.Workspace.WaitForChild("constraints");
+        spring.Attachment0 = attachment1;
+        spring.Attachment1 = attachment2;
 
         // Add the constraint to the map
         let id1 = attachment1.GetAttribute("id") as string;
@@ -49,23 +57,23 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         this.constraintMap.set(id1 + id2, true);
     }
 
-    // Recursively constraint all vertecies to their adjacent vertecies
-    private constrainVerticies(vertexIndex: number) {
-        print("Constraining vertex " + vertexIndex)
-        let currentMarker = this.markerMap.get(vertexIndex)!;
-        let currentMarkerAttachment = currentMarker.WaitForChild("Attachment")! as Attachment;
+    // Iteratively constrain all vertecies to their adjacent vertecies
+    private constrainVerticies() {
+        let verticies = this.mesh!.GetVertices() as Array<number>;
 
-        let adjacentVertecies = this.mesh!.GetAdjacentVertices(vertexIndex) as Array<number>;
-        print("Adjacent vertecies: " + adjacentVertecies.size())
-        for (let vert of adjacentVertecies) {
-            print("Constraining vertex " + vertexIndex + " to " + vert)
+        for (let vertex of verticies) {
+            let nodePart = this.nodeMap.get(vertex)!;
+            if (!nodePart) continue;
+            let attachment1 = nodePart.WaitForChild("Attachment") as Attachment;
 
-            if (!this.constraintExists(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment)) {
-                this.makeConstraint(currentMarkerAttachment, this.markerMap.get(vert)!.WaitForChild("Attachment")! as Attachment);
-                this.constrainVerticies(vert);
-            } else {
-                print("Constraint already exists between " + vertexIndex + " and " + vert);
+            for (let vertex2 of verticies) {
+                if (vertex === vertex2) continue;
+                if (!this.nodeMap.get(vertex2)) continue;
+
+                let attachment2 = this.nodeMap.get(vertex2)!.WaitForChild("Attachment") as Attachment;
+                if (!this.constraintExists(attachment1, attachment2)) this.makeConstraint(attachment1, attachment2);
             }
+            wait();
         }
 
     }
@@ -80,8 +88,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         // Properties
         node.Position = relativeCFrame.Position;
-        node.Size = new Vector3(0.1, 0.1, 0.1);
-        node.Anchored = false;
+        node.Size = new Vector3(0.3, 0.3, 0.3);
+        node.Anchored = true;
         node.Transparency = 0;
         node.CanCollide = true
         node.CollisionGroup = "car";
@@ -97,27 +105,36 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         attachment.SetAttribute("id", HttpService.GenerateGUID(false));
 
         // For O(1) lookup
-        this.markerMap.set(vertId, node);
+        this.nodeMap.set(vertId, node);
         this.verticesMap.set(node, vertId);
+    }
+
+    private unanchorNodes() {
+        for (let [_, node] of this.nodeMap) {
+            (node as BasePart).Anchored = false;
+        }
+
     }
 
     onStart() {
         // (this.instance as BasePart).Anchored = true;
         this.mesh = AssetService.CreateEditableMeshFromPartAsync(this.instance as MeshPart);
         this.mesh.Parent = this.instance;
-        this.vertices = this.mesh.GetVertices() as Array<number>;
+        let verticies = this.mesh.GetVertices() as Array<number>;
 
         let partAttachment = new Instance("Attachment");
         partAttachment.Parent = this.instance as BasePart;
 
-        for (let i = 0; i < this.vertices.size(); i++) {
-            this.makeNode(this.vertices[i]);
-
+        for (let i = 0; i < verticies.size(); i += 10) {
+            this.vertices.push(i);
+            this.makeNode(verticies[i]);
         }
-        print("Generated verticies, generating constraints...");
+        print(`Generated ${this.vertices.size()} verticies, generating constraints...`);
         // (this.instance as BasePart).Anchored = false;
 
-        this.constrainVerticies((this.mesh.GetVertices() as Array<number>)[0] as number);
+        this.constrainVerticies();
+        this.unanchorNodes();
         print("Done!");
+        print(`Generated ${this.constraintMap.size()} constraints!`)
     }
 }
