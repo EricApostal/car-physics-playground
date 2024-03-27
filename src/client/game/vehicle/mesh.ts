@@ -10,6 +10,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     public mesh?: EditableMesh;
     public scaling: number = 0.5;
     public damageResistance: number = 1000;
+    public physicsNodeInterval: number = 30;
+    public nodeSize = 1;
 
     constructor(scaling: number, damageResistance: number) {
         super();
@@ -43,8 +45,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         spring.MinLength = a1pos.sub(a2pos).Magnitude - 0.2;
         spring.MaxLength = a1pos.sub(a2pos).Magnitude + 0.2;
         spring.FreeLength = a1pos.sub(a2pos).Magnitude;
-        spring.Stiffness = 500;
-        spring.Damping = 0.5;
+        spring.Stiffness = 10000;
+        spring.Damping = 2;
 
         spring.Parent = game.Workspace.WaitForChild("constraints");
         spring.Attachment0 = attachment1;
@@ -86,7 +88,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         // Properties
         node.Position = relativeCFrame.Position;
-        node.Size = new Vector3(0.3, 0.3, 0.3);
+        node.Size = new Vector3(this.nodeSize, this.nodeSize, this.nodeSize);
         node.Anchored = true;
         node.Transparency = 0;
         node.CanCollide = true
@@ -110,16 +112,18 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     private makePhysicsNode(startVertex: number) {
 
         let verticies = this.mesh!.GetVertices() as Array<number>;
-        let halfDiff = ((startVertex + 20) - (startVertex)) / 2
+        let halfDiff = ((startVertex + 50) - (startVertex)) / 2
         let mean = verticies[startVertex + halfDiff];
-
+        if (!mean) {
+            mean = verticies.size();
+        }
         let meanPos = this.mesh!.GetPosition(mean).mul(this.scaling);
 
         let node = new Instance("Part");
         let relativeCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(meanPos));
 
         node.Position = relativeCFrame.Position;
-        node.Size = new Vector3(0.3, 0.3, 0.3);
+        node.Size = new Vector3(this.nodeSize, this.nodeSize, this.nodeSize);
         node.Anchored = true;
         node.Transparency = 0;
         node.CanCollide = true
@@ -138,7 +142,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         attachment.Parent = node;
         attachment.SetAttribute("id", HttpService.GenerateGUID(false));
 
-        for (let i = startVertex; i < startVertex + 20; i++) {
+        for (let i = startVertex; i < startVertex + this.physicsNodeInterval; i++) {
             let part = this.nodeMap.get(i);
             if (part) {
                 let weld = new Instance("WeldConstraint");
@@ -147,6 +151,19 @@ export class VehicleMesh extends BaseComponent implements OnStart {
                 weld.Part1 = part;
             }
         }
+
+        // spring to instance
+        let spring = new Instance("SpringConstraint");
+        // spring.LimitsEnabled = true;
+        spring.Parent = game.Workspace.WaitForChild("constraints");
+        // spring.MinLength = 0;
+        // spring.MaxLength = 0.5;
+        // spring.FreeLength = 0;
+        // spring.Stiffness = 1000;
+        // spring.Damping = 2;
+
+        spring.Attachment0 = attachment;
+        spring.Attachment1 = this.instance!.FindFirstChild("Attachment") as Attachment;
 
         this.physicsNodesMap.set(startVertex, node);
     }
@@ -176,7 +193,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             this.makeNode(verticies[i]);
         }
 
-        for (let i = 0; i < verticies.size(); i += 20) {
+        for (let i = 0; i < verticies.size(); i += this.physicsNodeInterval) {
             this.makePhysicsNode(verticies[i]);
         }
 
