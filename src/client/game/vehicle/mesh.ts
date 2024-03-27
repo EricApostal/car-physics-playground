@@ -11,7 +11,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
     public scaling: number = 0.5;
     public damageResistance: number = 1000;
     public physicsNodeInterval: number = 30;
-    public nodeSize = 1;
+    public nodeSize = 0.5;
 
     constructor(scaling: number, damageResistance: number) {
         super();
@@ -45,8 +45,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         spring.MinLength = a1pos.sub(a2pos).Magnitude - 0.2;
         spring.MaxLength = a1pos.sub(a2pos).Magnitude + 0.2;
         spring.FreeLength = a1pos.sub(a2pos).Magnitude;
-        spring.Stiffness = 30000;
-        spring.Damping = 100;
+        spring.Stiffness = 10000;
+        // spring.Damping = 10;
 
         spring.Parent = game.Workspace.WaitForChild("constraints");
         spring.Attachment0 = attachment1;
@@ -129,6 +129,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         node.CanCollide = true
         node.CollisionGroup = "car";
         node.CanTouch = true;
+        node.Massless = true;
         node.Parent = game.Workspace;
         node.Name = "node";
         node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
@@ -154,13 +155,12 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         // spring to instance
         let spring = new Instance("SpringConstraint");
-        // spring.LimitsEnabled = true;
         spring.Parent = game.Workspace.WaitForChild("constraints");
-        // spring.MinLength = 0;
-        // spring.MaxLength = 0.5;
-        // spring.FreeLength = 0;
-        // spring.Stiffness = 1000;
-        // spring.Damping = 2;
+        spring.LimitsEnabled = true;
+        let dist = node.Position.sub((this.instance as BasePart).Position).Magnitude;
+        spring.MinLength = dist - 0.2;
+        spring.MaxLength = dist + 0.2;
+        spring.Stiffness = 1000;
 
         spring.Attachment0 = attachment;
         spring.Attachment1 = this.instance!.FindFirstChild("Attachment") as Attachment;
