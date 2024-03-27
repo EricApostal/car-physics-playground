@@ -1,12 +1,11 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { Controller, OnStart } from "@flamework/core";
-import { AssetService } from "@rbxts/services";
-import { HttpService } from "@rbxts/services";
+import { AssetService, HttpService, RunService } from "@rbxts/services";
 
 export class VehicleMesh extends BaseComponent implements OnStart {
     public vertices: Array<number> = [];
     public nodeMap = new Map<number, BasePart>();
-    public verticesMap = new Map<BasePart, number>();
+    public physicsNodesMap = new Map<number, BasePart>();
     public constraintMap = new Map<string, boolean>();
     public mesh?: EditableMesh;
     public scaling: number = 0.5;
@@ -59,23 +58,22 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
     // Iteratively constrain all vertecies to their adjacent vertecies
     private constrainVerticies() {
-        let verticies = this.mesh!.GetVertices() as Array<number>;
+        let verticies = this.physicsNodesMap;
 
-        for (let vertex of verticies) {
-            let nodePart = this.nodeMap.get(vertex)!;
-            if (!nodePart) continue;
-            let attachment1 = nodePart.WaitForChild("Attachment") as Attachment;
+        for (let [id, part] of verticies) {
+            let attachment1 = part.WaitForChild("Attachment") as Attachment;
 
-            for (let vertex2 of verticies) {
-                if (vertex === vertex2) continue;
-                if (!this.nodeMap.get(vertex2)) continue;
+            for (let [id2, part2] of verticies) {
+                if (part === part2) continue;
 
-                let attachment2 = this.nodeMap.get(vertex2)!.WaitForChild("Attachment") as Attachment;
-                if (!this.constraintExists(attachment1, attachment2)) this.makeConstraint(attachment1, attachment2);
+                let attachment2 = part2.WaitForChild("Attachment") as Attachment;
+                if (!this.constraintExists(attachment1, attachment2)) {
+                    this.makeConstraint(attachment1, attachment2);
+                }
+
             }
             wait();
         }
-
     }
 
     // Bind node to vertex by ID
@@ -94,6 +92,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         node.CanCollide = true
         node.CollisionGroup = "car";
         node.CanTouch = true;
+        node.Massless = true;
         node.Parent = game.Workspace;
         node.Name = "node";
         node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
@@ -106,7 +105,50 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         // For O(1) lookup
         this.nodeMap.set(vertId, node);
-        this.verticesMap.set(node, vertId);
+    }
+
+    private makePhysicsNode(startVertex: number) {
+
+        let verticies = this.mesh!.GetVertices() as Array<number>;
+        let halfDiff = ((startVertex + 20) - (startVertex)) / 2
+        let mean = verticies[startVertex + halfDiff];
+
+        let meanPos = this.mesh!.GetPosition(mean).mul(this.scaling);
+
+        let node = new Instance("Part");
+        let relativeCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(meanPos));
+
+        node.Position = relativeCFrame.Position;
+        node.Size = new Vector3(0.3, 0.3, 0.3);
+        node.Anchored = true;
+        node.Transparency = 0;
+        node.CanCollide = true
+        node.CollisionGroup = "car";
+        node.CanTouch = true;
+        node.Parent = game.Workspace;
+        node.Name = "node";
+        node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
+        node.Color = Color3.fromRGB(51, 64, 194);
+
+        RunService.RenderStepped.Connect(() => {
+            node.CFrame = new CFrame(node.Position).mul(CFrame.Angles(0, 0, 0));
+        });
+
+        let attachment = new Instance("Attachment");
+        attachment.Parent = node;
+        attachment.SetAttribute("id", HttpService.GenerateGUID(false));
+
+        for (let i = startVertex; i < startVertex + 20; i++) {
+            let part = this.nodeMap.get(i);
+            if (part) {
+                let weld = new Instance("WeldConstraint");
+                weld.Parent = game.Workspace.WaitForChild("constraints");
+                weld.Part0 = node;
+                weld.Part1 = part;
+            }
+        }
+
+        this.physicsNodesMap.set(startVertex, node);
     }
 
     private unanchorNodes() {
@@ -114,6 +156,9 @@ export class VehicleMesh extends BaseComponent implements OnStart {
             (node as BasePart).Anchored = false;
         }
 
+        for (let [_, node] of this.physicsNodesMap) {
+            (node as BasePart).Anchored = false;
+        }
     }
 
     onStart() {
@@ -121,15 +166,21 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         this.mesh = AssetService.CreateEditableMeshFromPartAsync(this.instance as MeshPart);
         this.mesh.Parent = this.instance;
         let verticies = this.mesh.GetVertices() as Array<number>;
+        let triangles = this.mesh.GetTriangles() as Array<number>;
 
         let partAttachment = new Instance("Attachment");
         partAttachment.Parent = this.instance as BasePart;
 
-        for (let i = 0; i < verticies.size(); i += 10) {
+        for (let i = 0; i < verticies.size(); i++) {
             this.vertices.push(i);
             this.makeNode(verticies[i]);
         }
-        print(`Generated ${this.vertices.size()} verticies, generating constraints...`);
+
+        for (let i = 0; i < verticies.size(); i += 20) {
+            this.makePhysicsNode(verticies[i]);
+        }
+
+        print(`Generated ${this.vertices.size()} verticies & ${this.physicsNodesMap.size()} physics nodes, generating constraints...`);
         // (this.instance as BasePart).Anchored = false;
 
         this.constrainVerticies();
