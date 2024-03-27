@@ -45,8 +45,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         spring.MinLength = a1pos.sub(a2pos).Magnitude - 0.2;
         spring.MaxLength = a1pos.sub(a2pos).Magnitude + 0.2;
         spring.FreeLength = a1pos.sub(a2pos).Magnitude;
-        spring.Stiffness = 10000;
-        spring.Damping = 2;
+        spring.Stiffness = 30000;
+        spring.Damping = 100;
 
         spring.Parent = game.Workspace.WaitForChild("constraints");
         spring.Attachment0 = attachment1;
