@@ -1,4 +1,6 @@
 # Car Physics Engine for Roblox
+NOTE: This is WIP! While some things are partially implemented, some things aren't! Most of these systems work independently of each other, but haven't been integrated quite yet.
+
 # About
 Car Physics Playground is an experimental game, utilizing Roblox's experimental beta Meshing API. This game uses a combination of Roblox's physics in conjunction with custom physics to provide realistic crash representations.
 
