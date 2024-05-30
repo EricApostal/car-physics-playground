@@ -79,6 +79,7 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
     // Bind node to vertex by ID
     private makeNode(vertId: number) {
+        return;
         // Calculate Position
         let pos = this.mesh!.GetPosition(vertId).mul(this.scaling);
         let node = new Instance("Part");
@@ -131,10 +132,22 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
         node.Color = Color3.fromRGB(51, 64, 194);
 
-        RunService.RenderStepped.Connect(() => {
-            node.CFrame = new CFrame(node.Position).mul(CFrame.Angles(0, 0, 0));
-            // let carCFrame = (this.instance as BasePart).CFrame;
-            // node.CFrame = carCFrame.mul(new CFrame(meanPos));
+        let lastPosition: Vector3 | undefined = undefined;
+        RunService.Heartbeat.Connect(() => {
+            if (!lastPosition) {
+                const p = (this.instance as BasePart).CFrame.Position;
+                const newVec = new Vector3(p.X, p.Y, p.Z);
+                lastPosition = newVec;
+            }
+            // calculate angle / position diff
+            // let diff = (this.instance as BasePart).CFrame.sub(this.lastInstancePosition.Position);
+            // const cf = (this.instance as BasePart).CFrame;
+            // node.Position = node.Position.add(diff.Position);
+            // this.lastInstancePosition = new CFrame(cf.Position);
+            const diff = (this.instance as BasePart).CFrame.Position.sub(lastPosition);
+            node.Position = node.Position.add(diff);
+
+            lastPosition = (this.instance as BasePart).CFrame.Position;
         });
 
         let attachment = new Instance("Attachment");
@@ -158,15 +171,14 @@ export class VehicleMesh extends BaseComponent implements OnStart {
                 let spring = new Instance("SpringConstraint");
                 spring.Parent = game.Workspace.WaitForChild("constraints");
 
-                let dist = node.Position.sub(child.Position).Magnitude;
-                print(dist)
-                // spring.LimitsEnabled = true;
-                spring.MinLength = dist - 0.2;
-                spring.MaxLength = dist + 0.2;
-                spring.Stiffness = 10000;
+                // let dist = node.Position.sub(child.Position).Magnitude;
+                // // spring.LimitsEnabled = true;
+                // spring.MinLength = dist - 0.2;
+                // spring.MaxLength = dist + 0.2;
+                // spring.Stiffness = 10000;
 
-                spring.Attachment0 = attachment;
-                spring.Attachment1 = child;
+                // spring.Attachment0 = attachment;
+                // spring.Attachment1 = child;
 
                 // let alignment = new Instance("AlignOrientation");
                 // alignment.Attachment0 = attachment;
