@@ -23,7 +23,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         return (this.instance as BasePart).CFrame.mul(new CFrame(this.mesh!.GetPosition(vert).mul(this.scaling))).Position;
     }
 
-    // Check to see if a constraint already exists between two vertecies
     private constraintExists(attachment1: Attachment, attachment2: Attachment) {
         let id1 = attachment1.GetAttribute("id") as string;
         let id2 = attachment2.GetAttribute("id") as string;
@@ -80,17 +79,15 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
     // Bind node to vertex by ID
     private makeNode(vertId: number) {
-
         // Calculate Position
         let pos = this.mesh!.GetPosition(vertId).mul(this.scaling);
         let node = new Instance("Part");
         let relativeCFrame = (this.instance as BasePart).CFrame.mul(new CFrame(pos));
 
-        // Properties
         node.Position = relativeCFrame.Position;
         node.Size = new Vector3(this.nodeSize, this.nodeSize, this.nodeSize);
         node.Anchored = true;
-        node.Transparency = 0;
+        node.Transparency = 1;
         node.CanCollide = true
         node.CollisionGroup = "car";
         node.CanTouch = true;
@@ -100,7 +97,6 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         node.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0);
         node.Color = Color3.fromRGB(0, 255, 133);
 
-        // Make attachment with unique ID
         let attachment = new Instance("Attachment");
         attachment.Parent = node;
         attachment.SetAttribute("id", HttpService.GenerateGUID(false));
@@ -137,6 +133,8 @@ export class VehicleMesh extends BaseComponent implements OnStart {
 
         RunService.RenderStepped.Connect(() => {
             node.CFrame = new CFrame(node.Position).mul(CFrame.Angles(0, 0, 0));
+            // let carCFrame = (this.instance as BasePart).CFrame;
+            // node.CFrame = carCFrame.mul(new CFrame(meanPos));
         });
 
         let attachment = new Instance("Attachment");
@@ -154,16 +152,27 @@ export class VehicleMesh extends BaseComponent implements OnStart {
         }
 
         // spring to instance
-        let spring = new Instance("SpringConstraint");
-        spring.Parent = game.Workspace.WaitForChild("constraints");
-        spring.LimitsEnabled = true;
-        let dist = node.Position.sub((this.instance as BasePart).Position).Magnitude;
-        spring.MinLength = dist - 0.2;
-        spring.MaxLength = dist + 0.2;
-        spring.Stiffness = 1000;
 
-        spring.Attachment0 = attachment;
-        spring.Attachment1 = this.instance!.FindFirstChild("Attachment") as Attachment;
+        for (let child of this.instance!.GetChildren()) {
+            if (child.IsA("Attachment")) {
+                let spring = new Instance("SpringConstraint");
+                spring.Parent = game.Workspace.WaitForChild("constraints");
+
+                let dist = node.Position.sub(child.Position).Magnitude;
+                print(dist)
+                // spring.LimitsEnabled = true;
+                spring.MinLength = dist - 0.2;
+                spring.MaxLength = dist + 0.2;
+                spring.Stiffness = 10000;
+
+                spring.Attachment0 = attachment;
+                spring.Attachment1 = child;
+
+                // let alignment = new Instance("AlignOrientation");
+                // alignment.Attachment0 = attachment;
+                // alignment.Attachment1 = child;
+            }
+        }
 
         this.physicsNodesMap.set(startVertex, node);
     }

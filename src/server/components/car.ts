@@ -20,7 +20,7 @@ export class HyundaiVision extends BaseComponent implements OnStart, OnTick {
         this.enterPrompt.Parent = this.instance.FindFirstChild("MeshPart")! as BasePart;
         this.enterPrompt.ActionText = "Drive";
         this.enterPrompt.MaxActivationDistance = 10;
-        this.enterPrompt.HoldDuration = 0.25;
+        this.enterPrompt.HoldDuration = 0;
 
         this.enterPrompt.Triggered.Connect((plr) => {
             if (SessionManager.getSession(plr)!.getInVehicle()) return;
